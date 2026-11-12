@@ -1,19 +1,19 @@
 name: stop-operate
 
 description:
-当最终审核 AI 认为用户的问题已经得到完整回答，继续回复只会重复已有内容时，使用这个 skill 停止当前 Agent 循环。
+Use this skill to stop the current agent loop when the final reviewer determines that the user question has been fully answered and further replies would only repeat existing content.
 Use this skill when the final reviewing AI determines that the user's request has been fully answered and no useful work remains.
 
 when to use:
-- 当前回复已经完整、准确并且可以直接展示给用户。
-- 后续 Agent 回复只会确认、复述或改写相同内容。
+- The current reply is complete, accurate, and ready to show to the user.
+- Further agent replies would only confirm, repeat, or rephrase the same content.
 - Use this skill when no clarification, correction, tool call, or follow-up work remains.
 
 do not use:
-- 信息不足或仍需向用户澄清时，不要使用。
-- 回答仍有错误需要修正时，不要使用。
-- 仍有其他工具或后端操作需要执行时，不要使用。
-- 不要把发出停止信号描述成完成了某个外部操作。
+- Do not use when information is insufficient or clarification from the user is still needed.
+- Do not use when the answer still contains errors that need correction.
+- Do not use when other tool or backend operations remain to be performed.
+- Do not describe sending a stop signal as completing an external operation.
 
 tools:
   - stopOperate
@@ -30,8 +30,8 @@ args example:
 rules:
 - tool must be "stopOperate".
 - args must be an empty object.
-- 最终审核 AI 每次回复前都必须判断是否满足停止条件；满足时必须使用本 skill，不能只在 reply 中说“回答已经足够”。
-- 选择此工具时，reply 仍然必须包含可以直接展示给用户的完整最终回复。
-- 只有负责最终审核和收尾的 AI 才应使用这个 skill。
-- 工具返回 `{ "stopOperate": true }` 后，后端应将该变量传给前端。
+- Before every reply, the final reviewer must check whether the stop conditions are met. If so, it must use this skill rather than merely state in reply that the answer is sufficient.
+- When selecting this tool, reply must still contain a complete final answer ready to show to the user.
+- Only the AI responsible for final review and completion should use this skill.
+- After the tool returns `{ "stopOperate": true }`, the backend should pass that variable to the frontend.
 - Return valid JSON only.

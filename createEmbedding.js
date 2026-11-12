@@ -10,7 +10,7 @@ async function getEmbedder() {
 
 async function createEmbedding(text) {
   if(typeof text !== "string" || text.trim() === "") {
-      text = "没有回复";
+      text = "no response";
   } else{
       text = text.trim();
   }

@@ -71,7 +71,7 @@ async function skillCatalog(agentRole) {
             name: skillName,
             description: descriptionMatch
                 ? descriptionMatch[1].trim()
-                : "没有描述",
+                : "No description",
             tools,
             toolPermissions,
             argsSchema,

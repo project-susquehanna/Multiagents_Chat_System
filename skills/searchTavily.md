@@ -1,7 +1,7 @@
 name: search-tavily
 
 description:
-当用户要求联网搜索、查询最新公开信息或回答需要可核验的网页证据时，使用 Tavily 搜索并返回标题、URL 和相关内容片段。不要用于查询聊天历史、私人数据或无需联网的普通任务。
+Use Tavily when the user requests web search, current public information, or answers requiring verifiable web evidence. Return titles, URLs, and relevant content excerpts. Do not use it for chat history, private data, or ordinary tasks that do not require internet access.
 
 tools:
   - searchTavily
@@ -10,7 +10,7 @@ tools:
 
 ## Purpose
 
-使用 Tavily 搜索公开网页，为回答者提供可核验的资料片段。
+Use Tavily to search public web pages and provide verifiable excerpts for the answerer.
 
 ## Tool
 
@@ -20,34 +20,34 @@ args schema:
 
 ```yaml
 args:
-  keyword: string, required. 简洁、具体且非空的搜索关键词。
+  keyword: string, required. Concise, specific, non-empty search keywords.
 ```
 
 args example:
 
 ```json
 {
-  "keyword": "原神 官方 世界观 游戏设定"
+  "keyword": "Genshin Impact official lore game setting"
 }
 ```
 
 ## Rules
 
-- 只有 `data-provider` 可以调用此 Tool。
-- 用户明确要求联网、查询最新信息或需要公开网页证据时使用。
-- 搜索聊天历史时使用 `searchHistory`，不要使用本 Tool。
-- 不要搜索用户私人数据、凭证或内部数据库信息。
-- 调用前不得声称已经获得搜索结果。
-- 只把 Tool 实际返回的 `title`、`url`、`content` 和 `score` 当作搜索资料。
-- `content` 是相关内容片段，不等于整篇网页，也不保证事实正确。
-- 不要仅凭标题推导详细事实。
-- 搜索失败或结果为空时，明确说明没有取得可靠资料。
-- 不得编造来源、URL、引文或搜索结果。
+- Only `data-provider` may call this tool.
+- Use when the user explicitly requests web access, current information, or public web evidence.
+- Use `searchHistory` for chat history searches, not this tool.
+- Do not search for private user data, credentials, or internal database information.
+- Do not claim to have obtained search results before calling the tool.
+- Treat only the `title`, `url`, `content`, and `score` actually returned by the tool as search material.
+- `content` is a relevant excerpt, not the full web page, and does not guarantee factual accuracy.
+- Do not infer detailed facts from titles alone.
+- If the search fails or returns no results, clearly state that no reliable information was obtained.
+- Do not invent sources, URLs, quotations, or search results.
 
 ## Reply rules
 
-- 调用 Tool 时，`reply` 只简短说明正在搜索相关资料。
-- 不要在 Tool 返回前提前回答需要核验的事实。
+- When calling the tool, `reply` should briefly state only that relevant information is being searched for.
+- Do not answer facts requiring verification before the tool returns.
 
 ## Agent output example
 
@@ -56,9 +56,9 @@ args example:
   "skill": "search-tavily",
   "tool": "searchTavily",
   "args": {
-    "keyword": "原神 官方 世界观 游戏设定"
+    "keyword": "Genshin Impact official lore game setting"
   },
-  "reply": "正在搜索与原神游戏设定相关的公开资料。"
+  "reply": "Searching for public information about the Genshin Impact game setting."
 }
 ```
 

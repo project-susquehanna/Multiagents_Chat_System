@@ -113,7 +113,7 @@ body:not(.is-signed-in) .chat-input-area {
 }
 
 #box:empty::before {
-    content: "今天想聊点什么？";
+    content: "What would you like to talk about today?";
     position: fixed;
     left: 50%;
     top: 50%;

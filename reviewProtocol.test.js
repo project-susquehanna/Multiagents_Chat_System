@@ -4,12 +4,12 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { parseReviewJson, preflightReason } = require('./reviewProtocol');
 
-const action = (tool = 'searchTavily') => ({ skill: tool === 'searchHistory' ? 'history-manager' : 'search-tavily', tool, args: { keyword: '报告' }, reply: '正在检索' });
-const draft = { skill: 'none', tool: 'none', args: {}, reply: '候选答案' };
-const retry = { decision: 'retry', reasonCode: 'wrong_scope', reason: '检索范围错误', retryHint: '查询试验报告', reply: '' };
-const final = { decision: 'final', reasonCode: 'insufficient_evidence', reason: '只有目标', retryHint: '', reply: '22%仅为目标，尚无实测结果。' };
+const action = (tool = 'searchTavily') => ({ skill: tool === 'searchHistory' ? 'history-manager' : 'search-tavily', tool, args: { keyword: 'Report' }, reply: 'Searching' });
+const draft = { skill: 'none', tool: 'none', args: {}, reply: 'Candidate answer' };
+const retry = { decision: 'retry', reasonCode: 'wrong_scope', reason: 'Incorrect retrieval scope', retryHint: 'Search for the trial report', reply: '' };
+const final = { decision: 'final', reasonCode: 'insufficient_evidence', reason: 'Only a target is available', retryHint: '', reply: '22% is only a target; no measured results are available yet.' };
 
-async function run(outputs, question = '请查阅星苇试验报告，给出节能比例') {
+async function run(outputs, question = 'Please consult the Xingwei trial report and provide the energy savings percentage') {
     let handler;
     const executed = [], requests = [];
     const mocks = {
@@ -42,9 +42,9 @@ async function run(outputs, question = '请查阅星苇试验报告，给出节�
 }
 
 test('preflight preserves explicit history requests', () => {
-    assert.ok(preflightReason('请查阅项目试验报告', action('searchHistory')));
-    assert.ok(preflightReason('请检索苔桥项目的团队名单，谁负责软件组？硬件组是谁负责？', action('searchHistory')));
-    assert.equal(preflightReason('查找此前聊天中的项目报告', action('searchHistory')), null);
+    assert.ok(preflightReason('Please consult the project trial report', action('searchHistory')));
+    assert.ok(preflightReason('Please search for the Taiqiao project team roster. Who leads the software team, and who leads the hardware team?', action('searchHistory')));
+    assert.equal(preflightReason('Find the project report in our previous chat', action('searchHistory')), null);
 });
 test('review contract rejects malformed and inconsistent decisions', () => {
     assert.deepEqual(parseReviewJson(JSON.stringify(retry)), retry);
@@ -62,7 +62,7 @@ test('C feedback reruns A, B and C once and is visible to A', async () => {
     const { body, requests, executed } = await run([action(), draft, retry, action(), draft, final]);
     assert.equal(body.attempts.length, 2);
     assert.equal(body.finalAnswer, final.reply);
-    assert.match(requests[3].messages[1].content, /wrong_scope|检索范围错误/);
+    assert.match(requests[3].messages[1].content, /wrong_scope|Incorrect retrieval scope/);
     assert.deepEqual(executed, ['searchTavily', 'searchTavily', 'stopOperate']);
 });
 test('repeated retry from C is bounded and becomes an explicit final limitation', async () => {
@@ -83,6 +83,6 @@ test('correct search with insufficient evidence ends without retry', async () =>
 });
 test('invalid C JSON is retried with the C contract', async () => {
     const { requests } = await run([action(), draft, {}, final]);
-    assert.match(requests[3].messages[0].content, /decision、reasonCode、reason、retryHint、reply/);
-    assert.doesNotMatch(requests[3].messages[0].content, /必须且只能包含 skill/);
+    assert.match(requests[3].messages[0].content, /decision, reasonCode, reason, retryHint, and reply/);
+    assert.doesNotMatch(requests[3].messages[0].content, /Must contain exactly four fields: skill/);
 });

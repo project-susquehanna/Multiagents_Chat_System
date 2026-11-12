@@ -8,22 +8,22 @@ async function toolUser(agentRole, skill, tool, args = {}, context = {}){
 
         const trySkill = skill_registry[skill];
         if (!trySkill) {
-            throw new Error(`Skill 不存在：${skill}`);
+            throw new Error(`Skill does not exist: ${skill}`);
         }
 
         const toolFunction = trySkill.tools[tool];
         if (!toolFunction) {
-            throw new Error(`Tool 不属于 Skill ${skill}：${tool}`);
+            throw new Error(`Tool does not belong to skill ${skill}: ${tool}`);
         }
 
         const allowedAgents = trySkill.toolPermissions?.[tool] || [];
         if (!allowedAgents.includes(agentRole)) {
-            throw new Error(`${agentRole} 不允许调用工具：${tool}`);
+            throw new Error(`${agentRole} is not allowed to call tool: ${tool}`);
         }
 
         if (skill === "history-manager") {
             if (!context.userId) {
-                throw new Error("请先登录后使用历史记录工具");
+                throw new Error("Please sign in to use history tools");
             }
             return await toolFunction(args, context.userId);
         }

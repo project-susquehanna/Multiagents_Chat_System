@@ -36,7 +36,7 @@ async function searchTavily(args = {}) {
         keyword: keyword.trim(),
         results: Array.isArray(data.results)
             ? data.results.map((item) => ({
-                title: item.title || "无标题",
+                title: item.title || "Untitled",
                 url: item.url || "",
                 content: item.content || "",
                 score: typeof item.score === "number" ? item.score : null

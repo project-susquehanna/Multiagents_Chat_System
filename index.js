@@ -28,7 +28,7 @@ async function loadHistory() {
 
         const userId = clerk.user.id;
         const token = await clerk.session.getToken();
-        if (!token) throw new Error("登录已失效，请重新登录");
+        if (!token) throw new Error("Your session has expired. Please sign in again");
 
         const response = await fetch("/chat/history", {
             headers: {
@@ -39,10 +39,10 @@ async function loadHistory() {
 
         const rows = await response.json();
         if (!response.ok) {
-            throw new Error(rows.error || "历史记录加载失败");
+            throw new Error(rows.error || "Unable to load chat history");
         }
         if (!Array.isArray(rows)) {
-            throw new Error("历史记录返回格式错误");
+            throw new Error("Invalid chat history response format");
         }
 
         
@@ -73,9 +73,9 @@ async function loadHistory() {
         box.scrollTop = box.scrollHeight;
     } catch (error) {
         if (version !== historyLoadVersion) return;
-        console.error("历史加载失败:", error);
+        console.error("Failed to load history:", error);
         appendMessage(
-            error.message || "历史记录加载失败，请刷新重试",
+            error.message || "Unable to load chat history. Please refresh and try again",
             "error-message"
         );
     } finally {
@@ -109,7 +109,7 @@ async function sendMessage() {
 
     if (isSending || isLoadingHistory) {
         const busyMessage = document.createElement("div");
-        busyMessage.textContent = "前面正在运行，请稍后再试";
+        busyMessage.textContent = "A request is already running. Please try again later";
         busyMessage.className = "message info-message";
         box.append(busyMessage);
         box.scrollTop = box.scrollHeight;
@@ -143,15 +143,15 @@ async function sendMessage() {
         const formattedMessageHistory = messageHistory
             .map((message) => {
                 if (message.role !== "user" && message.role !== "assistant") {
-                    throw new Error(`未知的消息角色：${message.role}`);
+                    throw new Error(`Unknown message role: ${message.role}`);
                 }
-                const responder = message.role === "user" ? "用户" : "助手";
-                return `${responder}：${message.content}`;
+                const responder = message.role === "user" ? "User" : "Assistant";
+                return `${responder}: ${message.content}`;
             })
             .join("\n\n");
 
         const token = await clerk.session.getToken();
-        if (!token) throw new Error("登录已失效，请重新登录");
+        if (!token) throw new Error("Your session has expired. Please sign in again");
 
         const response = await fetch("/chat", {
             method: "POST",
@@ -191,7 +191,7 @@ async function sendMessage() {
 
         if (data.saved === false) {
             const saveWarning = document.createElement("div");
-            saveWarning.textContent = data.saveWarning || "回答已生成，但历史记录保存失败。";
+            saveWarning.textContent = data.saveWarning || "The answer was generated, but chat history could not be saved.";
             saveWarning.className = "message info-message";
             box.append(saveWarning);
         }
@@ -201,7 +201,7 @@ async function sendMessage() {
         messageHistory.length = historyCheckpoint;
         console.error(error);
         const errorMessage = document.createElement("div");
-        errorMessage.textContent = error.message || "请求失败，请稍后重试。";
+        errorMessage.textContent = error.message || "The request failed. Please try again later.";
         errorMessage.className = "message error-message";
         box.append(errorMessage);
         box.scrollTop = box.scrollHeight;

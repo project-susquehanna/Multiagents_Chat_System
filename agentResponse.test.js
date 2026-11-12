@@ -8,8 +8,8 @@ const {
 
 test("accepts a complete valid agent response", () => {
     assert.deepEqual(
-        parseAgentJson('{"skill":"none","tool":"none","args":{},"reply":"完成"}'),
-        { skill: "none", tool: "none", args: {}, reply: "完成" }
+        parseAgentJson('{"skill":"none","tool":"none","args":{},"reply":"Done"}'),
+        { skill: "none", tool: "none", args: {}, reply: "Done" }
     );
 });
 
@@ -19,7 +19,7 @@ test("rejects a missing reply instead of supplying a default", () => {
         (error) => {
             assert.equal(error instanceof AgentOutputValidationError, true);
             assert.equal(error.statusCode, 502);
-            assert.match(error.message, /缺少必填字段 reply/);
+            assert.match(error.message, /Missing required field reply/);
             return true;
         }
     );
@@ -33,7 +33,7 @@ test("rejects an empty reply", () => {
             args: {},
             reply: "   "
         }),
-        /字段 reply 不能为空/
+        /Field reply must not be empty/
     );
 });
 
@@ -43,19 +43,19 @@ test("rejects invalid field types and unknown fields", () => {
             skill: "none",
             tool: "none",
             args: [],
-            reply: "完成"
+            reply: "Done"
         }),
-        /字段 args 必须是 JSON 对象/
+        /Field args must be a JSON object/
     );
     assert.throws(
         () => validateAgentOutput({
             skill: "none",
             tool: "none",
             args: {},
-            reply: "完成",
+            reply: "Done",
             extra: true
         }),
-        /包含不允许的字段：extra/
+        /Disallowed fields: extra/
     );
 });
 
@@ -65,8 +65,8 @@ test("rejects inconsistent none fields", () => {
             skill: "none",
             tool: "searchTavily",
             args: {},
-            reply: "正在查询"
+            reply: "Searching"
         }),
-        /skill 为 none 时 tool 必须为 none/
+        /tool must be none when skill is none/
     );
 });

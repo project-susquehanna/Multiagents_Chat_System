@@ -5,13 +5,13 @@ sql`SELECT NOW()`
 
     .then((result) => {
 
-        console.log("数据库连接成功:", result[0]);
+        console.log("Database connection successful:", result[0]);
 
     })
 
     .catch((error) => {
 
-        console.error("数据库连接失败:", error);
+        console.error("Database connection failed:", error);
 
     });
 
@@ -41,7 +41,7 @@ function chatLimiter(req, res, next) {
     if (bucket.count >= chatRateLimit) {
         const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
         res.set("Retry-After", String(retryAfterSeconds));
-        return res.status(429).json({ error: "请求过于频繁，请稍后再试。" });
+        return res.status(429).json({ error: "Too many requests. Please try again later." });
     }
 
     bucket.count += 1;
@@ -50,7 +50,7 @@ function chatLimiter(req, res, next) {
 function identifyUser(req, res, next) {
     const { isAuthenticated, userId } = getAuth(req);
     if (!isAuthenticated || !userId) {
-        return res.status(401).json({ error: "请先登录" });
+        return res.status(401).json({ error: "Please sign in first" });
     }
     req.user = { id: userId };
     next();
@@ -60,7 +60,7 @@ app.use(clerkMiddleware());
 app.use(express.json());
 app.get("/auth/config", (req, res) => {
     if (!process.env.CLERK_PUBLISHABLE_KEY) {
-        return res.status(503).json({ error: "尚未配置 Clerk Publishable Key" });
+        return res.status(503).json({ error: "Clerk Publishable Key is not configured" });
     }
     res.json({ publishableKey: process.env.CLERK_PUBLISHABLE_KEY });
 });

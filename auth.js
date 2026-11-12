@@ -17,7 +17,7 @@ function loadScript(src, publishableKey) {
             script.dataset.clerkPublishableKey = publishableKey;
         }
         script.onload = resolve;
-        script.onerror = () => reject(new Error("无法加载 Clerk 登录组件"));
+        script.onerror = () => reject(new Error("Unable to load the Clerk sign-in component"));
         document.head.append(script);
     });
 }
@@ -46,7 +46,7 @@ function updateAuthUI() {
             clerk.unmountUserButton(userButton);
             userButtonMounted = false;
         }
-        authStatus.textContent = "登录或注册后即可开始聊天。";
+        authStatus.textContent = "Sign in or sign up to start chatting.";
         if (!signInMounted) {
             clerk.mountSignIn(signIn);
             signInMounted = true;
@@ -57,7 +57,7 @@ function updateAuthUI() {
 window.clerkReady = (async () => {
     try {
         const response = await fetch("/auth/config");
-        if (!response.ok) throw new Error("Clerk 配置未就绪");
+        if (!response.ok) throw new Error("Clerk configuration is not ready");
         const { publishableKey } = await response.json();
         const domain = atob(publishableKey.split("_")[2]).slice(0, -1);
         const origin = `https://${domain}`;
@@ -70,8 +70,8 @@ window.clerkReady = (async () => {
         updateAuthUI();
         return clerk;
     } catch (error) {
-        console.error("Clerk 登录初始化失败:", error);
-        authStatus.textContent = "登录功能暂时不可用，请检查后端配置后刷新页面。";
+        console.error("Clerk sign-in initialization failed:", error);
+        authStatus.textContent = "Sign-in is temporarily unavailable. Check the backend configuration and refresh the page.";
         throw error;
     }
 })();

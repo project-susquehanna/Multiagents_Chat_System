@@ -1,6 +1,6 @@
 class AgentOutputValidationError extends Error {
     constructor(message) {
-        super(`模型输出无效：${message}`);
+        super(`Invalid model output: ${message}`);
         this.name = "AgentOutputValidationError";
         this.statusCode = 502;
         this.code = "INVALID_MODEL_OUTPUT";
@@ -9,7 +9,7 @@ class AgentOutputValidationError extends Error {
 
 function parseAgentJson(content) {
     if (typeof content !== "string" || content.trim() === "") {
-        throw new AgentOutputValidationError("返回内容为空");
+        throw new AgentOutputValidationError("Response is empty");
     }
 
     const text = content.trim();
@@ -22,13 +22,13 @@ function parseAgentJson(content) {
         const end = text.lastIndexOf("}");
 
         if (start === -1 || end <= start) {
-            throw new AgentOutputValidationError("返回内容不是合法 JSON 对象");
+            throw new AgentOutputValidationError("Response is not a valid JSON object");
         }
 
         try {
             parsed = JSON.parse(text.slice(start, end + 1));
         } catch {
-            throw new AgentOutputValidationError("返回内容不是合法 JSON 对象");
+            throw new AgentOutputValidationError("Response is not a valid JSON object");
         }
     }
 
@@ -37,7 +37,7 @@ function parseAgentJson(content) {
 
 function validateAgentOutput(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
-        throw new AgentOutputValidationError("顶层必须是 JSON 对象");
+        throw new AgentOutputValidationError("Top-level value must be a JSON object");
     }
 
     const requiredFields = ["skill", "tool", "args", "reply"];
@@ -46,22 +46,22 @@ function validateAgentOutput(value) {
     );
     if (unknownFields.length > 0) {
         throw new AgentOutputValidationError(
-            `包含不允许的字段：${unknownFields.join(", ")}`
+            `Disallowed fields: ${unknownFields.join(", ")}`
         );
     }
 
     for (const field of requiredFields) {
         if (!Object.prototype.hasOwnProperty.call(value, field)) {
-            throw new AgentOutputValidationError(`缺少必填字段 ${field}`);
+            throw new AgentOutputValidationError(`Missing required field ${field}`);
         }
     }
 
     for (const field of ["skill", "tool", "reply"]) {
         if (typeof value[field] !== "string") {
-            throw new AgentOutputValidationError(`字段 ${field} 必须是字符串`);
+            throw new AgentOutputValidationError(`Field ${field} must be a string`);
         }
         if (value[field].trim() === "") {
-            throw new AgentOutputValidationError(`字段 ${field} 不能为空`);
+            throw new AgentOutputValidationError(`Field ${field} must not be empty`);
         }
     }
 
@@ -70,23 +70,23 @@ function validateAgentOutput(value) {
         typeof value.args !== "object" ||
         Array.isArray(value.args)
     ) {
-        throw new AgentOutputValidationError("字段 args 必须是 JSON 对象");
+        throw new AgentOutputValidationError("Field args must be a JSON object");
     }
 
     if (value.skill === "none") {
         if (value.tool !== "none") {
             throw new AgentOutputValidationError(
-                "skill 为 none 时 tool 必须为 none"
+                "tool must be none when skill is none"
             );
         }
         if (Object.keys(value.args).length !== 0) {
             throw new AgentOutputValidationError(
-                "skill 为 none 时 args 必须是空对象"
+                "args must be an empty object when skill is none"
             );
         }
     } else if (value.tool === "none") {
         throw new AgentOutputValidationError(
-            "skill 非 none 时 tool 不能为 none"
+            "tool must not be none when skill is not none"
         );
     }
 

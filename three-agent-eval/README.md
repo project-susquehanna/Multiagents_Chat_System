@@ -1,45 +1,47 @@
-# 三 Agent 固定资料评测
+# Three-agent evaluation with fixed evidence
 
-当前状态：只完成离线脚本验证，没有新的真实模型结果。12 个题目全流程 dry-run 通过；占位回答不用于评分。
+The existing local result files have been translated into English for readability. Their recorded model responses and evidence text are translations of earlier runs, not new model outputs. Original timestamps, usage, and hashes describe those earlier runs; they do not validate the translated text or measure the English prompts. Run a new evaluation to assess the translated pipeline.
 
-## 运行
+Current status: only offline script validation has been completed; there are no new real-model results. All 12 cases passed the full dry run; placeholder answers are not scored.
 
-把 three-agent-eval 文件夹放到 backend 目录下。需要支持 --env-file 的 Node（20.6+）。在 backend 目录执行：
+## Running
+
+Place the three-agent-eval folder inside backend. Node with --env-file support (20.6+) is required. Run from the backend directory:
 
 ```bash
 node --env-file=.env three-agent-eval/run-eval.mjs --project . --limit 3
 ```
 
-先跑 3 题确认模型可用。正式小样本：
+Run three cases first to confirm model availability. For the formal small-sample evaluation:
 
 ```bash
 node --env-file=.env three-agent-eval/run-eval.mjs --project . --limit 12 --repeats 3
 ```
 
-结果默认在 three-agent-eval/raw-results.json。运行会消耗 Groq API 配额：12题×3轮正常144次生成，重试时最多288次生成；无真实搜索费用。遇到认证或限流问题记录后停止，不循环重跑。每题之间默认间隔18秒，每次调用最多等待90秒。程序运行时读取环境变量，不打印密钥；无需上传 .env，只发 raw-results.json。
+Results are saved to three-agent-eval/raw-results.json by default. Runs consume Groq API quota: 12 cases × 3 rounds normally require 144 generations, or up to 288 with retries; there are no real search charges. Authentication or rate-limit errors are recorded and stop the run without repeated reruns. The default interval between cases is 18 seconds, with a 90-second timeout per call. Environment variables are read at runtime and keys are not printed. Share only raw-results.json; there is no need to upload .env.
 
-## 比较什么
+## What is compared
 
-1. A+B：取同一条执行链的 B 草稿，成本包含 A 和 B。
-2. A+B+C：取最新版代码的 C 最终回答，成本包含三个 Agent 及重试。
-3. 单独120B：用 B 收到的同一系统提示和证据输入单独回答，温度与 C 同为0。若 A 失败导致 B 没有运行，该对照标记为未运行，不能算正确或静默排除。
+1. A+B: use the B draft from the same execution chain; cost includes A and B.
+2. A+B+C: use the C final answer from the latest code; cost includes all three agents and retries.
+3. Standalone 120B: answer independently using the exact system prompt and evidence input received by B, with temperature 0 to match C. If A fails and B does not run, mark this control as not run; do not count it as correct or silently exclude it.
 
-A 默认调用项目中实际配置的模型，B/C 保留原模型和提示词。默认不追加 JSON 协议，不偷偷改掉项目的输出问题。A原有token上限保留；无上限的调用额外设置4096上限防止超长生成。模型不可用时脚本报错，不自动换模型。--collector-model 可显式替换 A，但结果中会记录，不能称为原版模型评测。
+A uses the model configured in the project by default; B/C retain their original models and prompts. No JSON contract is appended by default, so project output issues are not silently fixed. The existing A token cap is preserved; calls without a cap receive a 4096-token cap to prevent excessively long generations. If a model is unavailable, the script fails rather than switching automatically. --collector-model explicitly overrides A and is recorded in the results; such runs cannot be described as evaluations of the original model configuration.
 
-搜索和历史工具返回固定的合成资料，模型调用是真实的。资料均为虚构项目和 .example 地址，不进行真实联网检索；不连接数据库、不读取真实历史、不写入生产数据。为了测试历史工具权限，隔离环境提供固定测试用户身份。这是依据证据作答的压力测试，不是完整登录/搜索/数据库端到端测试，也不是通用知识幻觉率。
+Search and history tools return fixed synthetic data, while model calls are real. All projects and .example addresses are fictional. No live web searches, database connections, real history reads, or production writes occur. The isolated environment supplies a fixed test user identity to exercise history-tool permissions. This is an evidence-grounding stress test, not a full login/search/database end-to-end test or a measurement of general-knowledge hallucination rates.
 
-## 如何评分
+## How to score
 
-发回结果后逐题核对 cases.json 的 gold/rubric。评分时先隐藏模型分组，保留解释，不让模型自己声称答案正确就算通过。
+After results are returned, check each case against gold/rubric in cases.json. Hide model groups before scoring, retain explanations, and do not treat a model claim of correctness as a pass.
 
-- correct：回答符合证据且完成要求；证据确实不足时正确说明不足也算正确。
-- hallucination：肯定地给出错误或无证据支持的事实、来源、引文。
-- incomplete：部分正确但遗漏必要答案。
-- abstain：有足够证据却拒答，不能用拒答压低幻觉率后声称整体更好。
-- protocol_error：未生成可用回复、JSON错误、接口失败；单独统计，不能当作无幻觉的成功。
+- correct: the answer matches the evidence and fulfills the request; correctly identifying genuinely insufficient evidence also counts.
+- hallucination: confidently states false or unsupported facts, sources, or quotations.
+- incomplete: partially correct but omits required information.
+- abstain: refuses despite sufficient evidence; reducing hallucinations through refusal does not justify claiming better overall performance.
+- protocol_error: no usable reply, invalid JSON, or an API failure; count separately, not as a hallucination-free success.
 
-报告同时列出：每组正确/幻觉/拒答/部分回答/失败的数量；C纠正了多少B的错误、又把多少正确答案改错；API耗时和输入/输出token（含重试）。无usage的失败调用标记为成本未知，不能算免费。成本只报告token，不凭空估算美元。
+Report counts of correct answers, hallucinations, abstentions, partial answers, and failures for each group; how many B errors C corrected and how many correct answers C made incorrect; API latency and input/output tokens including retries. Failed calls without usage data have unknown cost and must not be treated as free. Report costs in tokens only; do not invent dollar estimates.
 
-A+B与A+B+C的差异也包含20B到120B的模型能力差异，因此加单独120B对照。三轮重复只有12个独立题目，不是36个不同题目。样本很小，不能把结果写成普遍降低幻觉XX%的结论。模型调用顺序固定，耗时仅供粗略比较，不含真实搜索、数据库和网络用户界面时间。
+The difference between A+B and A+B+C also includes the capability difference between 20B and 120B, hence the standalone 120B control. Three repetitions still contain only 12 independent cases, not 36 distinct cases. The sample is too small to claim a general percentage reduction in hallucinations. Model call order is fixed; latency supports only rough comparisons and excludes real search, database, and web UI time.
 
-可选：--dry-run 完全不调用API，只检查评测脚本；其输出带 dryRun:true，不可拿来计算模型效果。--mode fixed-evidence 会把 A 也替换为确定性桩，不适合声称三个真实Agent的结果。--json-contract 会额外修改提示协议，仅供排错，不能混入原版测试。
+Optional: --dry-run checks only the evaluation script without calling any API; its output is marked dryRun:true and must not be used to measure model performance. --mode fixed-evidence also replaces A with a deterministic stub and cannot represent three real agents. --json-contract modifies the prompt contract for troubleshooting only and must not be mixed with original-configuration evaluations.

@@ -55,8 +55,8 @@ async function requestJSON(endpoint, payload) {
     if (endpoint === '/models') return { data: [collectorModelFromSource, 'openai/gpt-oss-20b', 'openai/gpt-oss-120b'].map(id => ({id})) };
     const prompt = payload.messages.map(m => m.content).join('\n');
     const collector = payload.model.startsWith('qwen/');
-    const review = prompt.includes('你是最终证据审核者');
-    const history = prompt.includes('当时助手说负责人是谁');
+    const review = prompt.includes('You are the final evidence reviewer');
+    const history = prompt.includes('who did the assistant say was the leader at the time');
     const obj = collector
       ? {skill: history ? 'history-manager' : 'search-tavily', tool: history ? 'searchHistory' : 'searchTavily', args: {keyword:'offline test'}, reply:'OFFLINE_PLACEHOLDER'}
       : review
@@ -129,7 +129,7 @@ async function completion(request, calls, stage) {
   if (jsonContract && stage !== 'review') {
     actual.messages = request.messages.map(message => message.role === 'system' ? {
       ...message,
-      content: `${message.content}\n\n输出协议：你必须只输出一个 JSON 对象，字段必须为 skill、tool、args、reply。skill 和 tool 是字符串，args 是对象，reply 是包含完整回答的非空字符串。不要把 reply 改名为 answer、content 或其他字段。示例结构：{"skill":"none","tool":"none","args":{},"reply":"完整回答"}。遵守前文关于各角色 skill/tool 取值的要求。`
+      content: `${message.content}\n\nOutput contract: output only one JSON object with the fields skill, tool, args, and reply. skill and tool are strings, args is an object, and reply is a non-empty string containing the complete answer. Do not rename reply to answer, content, or any other field. Example structure: {"skill":"none","tool":"none","args":{},"reply":"Complete answer"}. Follow the preceding requirements for the skill/tool values of each role.`
     } : message);
   }
   const record = { stage, requestedModel, model, startedAt: new Date().toISOString() };
@@ -181,7 +181,7 @@ async function evaluate(item) {
         requests.push(request);
         if (fixedEvidence && request.model.startsWith('qwen/')) {
           const history = Boolean(item.historyRows);
-          const selected = { skill: history ? 'history-manager' : 'search-tavily', tool: history ? 'searchHistory' : 'searchTavily', args: { keyword: item.question }, reply: history ? '正在检索此前的聊天记录。' : '正在检索项目资料。' };
+          const selected = { skill: history ? 'history-manager' : 'search-tavily', tool: history ? 'searchHistory' : 'searchTavily', args: { keyword: item.question }, reply: history ? 'Searching previous chat records.' : 'Searching project information.' };
           return { choices: [{ message: { content: JSON.stringify(selected) } }] };
         }
         const stage = standalonePhase ? 'standalone120b' : request.model.startsWith('qwen/') ? 'collector' : request.model === 'openai/gpt-oss-20b' ? 'draft' : 'review';
@@ -197,7 +197,7 @@ async function evaluate(item) {
   const response = { status: 200 };
   const res = { status(code) { response.status = code; return this; }, json(data) { response.body = data; return this; } };
   const started = performance.now();
-  await handlers['POST /']({ body: { originalMessage: item.question, messageHistory: `用户：${item.question}` } }, res);
+  await handlers['POST /']({ body: { originalMessage: item.question, messageHistory: `User: ${item.question}` } }, res);
   const pipelineMs = Math.round(performance.now() - started);
   const draftRequest = requests.filter(request => request.model === 'openai/gpt-oss-20b').at(-1);
   let standalone = null;

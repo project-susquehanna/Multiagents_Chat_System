@@ -16,12 +16,12 @@ const skill_registry = {
         argsSchema: {
             searchHistory: {
                 args: {
-                    keyword: "string，必填。要搜索的历史记录关键词。toolFunction 接收整个 args 对象，并读取 args.keyword。"
+                    keyword: "string, required. Keywords for searching chat history. toolFunction receives the entire args object and reads args.keyword."
                 }
             },
             deleteHistory: {
                 args: {
-                    id: "number，必填。要删除的历史记录 id。toolFunction 接收整个 args 对象，并读取 args.id。"
+                    id: "number, required. ID of the history record to delete. toolFunction receives the entire args object and reads args.id."
                 }
             },
             clearHistory: {
@@ -41,8 +41,8 @@ const skill_registry = {
         argsSchema: {
             generatePDF: {
                 args: {
-                    html: "string，必填。HTML 内容，用来生成 PDF，不能为空。toolFunction 接收整个 args 对象，并读取 args.html。",
-                    filename: "string，可选。输出 PDF 文件名，建议以 .pdf 结尾。toolFunction 接收整个 args 对象，并读取 args.filename。"
+                    html: "string, required. Non-empty HTML content used to generate a PDF. toolFunction receives the entire args object and reads args.html.",
+                    filename: "string, optional. Output PDF filename; a .pdf extension is recommended. toolFunction receives the entire args object and reads args.filename."
                 }
             }
         },
@@ -74,7 +74,7 @@ const skill_registry = {
         argsSchema: {
             searchTavily: {
                 args: {
-                    keyword: "string，必填。简洁、具体且非空的 Tavily 搜索关键词。"
+                    keyword: "string, required. Concise, specific, non-empty Tavily search keywords."
                 }
             }
         },
