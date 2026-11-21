@@ -245,6 +245,7 @@ try {
     console.log(`DONE ${item.id} http=${result.status} calls=${result.calls.length} pipeline_ms=${result.pipelineMs}`);
     if (result.calls.some(call => call.error?.includes('401') || call.error?.includes('429'))) {
       audit.stoppedReason = 'Authentication or rate limit error; no automatic repeated billing attempts.';
+      process.exitCode = 1;
       break;
     }
   }
