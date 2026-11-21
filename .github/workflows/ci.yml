@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node three-agent-eval/run-eval.mjs --project . --dry-run --limit 12 --interval-ms 0
+      
+      
+      
+          
+          
+        
+          
+    
+
+  
