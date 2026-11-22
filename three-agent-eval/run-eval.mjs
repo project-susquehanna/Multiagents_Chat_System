@@ -134,20 +134,37 @@ async function completion(request, calls, stage) {
   }
   const record = { stage, requestedModel, model, startedAt: new Date().toISOString() };
   const start = performance.now();
+  let requestCount = 0;
   try {
-    const data = await requestJSON('/chat/completions', actual);
-    record.ms = Math.round(performance.now() - start);
-    record.usage = data.usage;
-    record.finishReason = data.choices?.[0]?.finish_reason;
-    record.content = data.choices?.[0]?.message?.content;
-    return data;
-  } catch (error) {
-    record.ms = Math.round(performance.now() - start);
-    record.error = safeError(error);
-    record.retryAfter = error.retryAfter;
-    throw error;
-  } finally { calls.push(record); }
-}
+    while(requestCount < 3) {
+      try {
+        const data = await requestJSON('/chat/completions', actual);
+        record.ms = Math.round(performance.now() - start);
+        record.usage = data.usage;
+        record.finishReason = data.choices?.[0]?.finish_reason;
+        record.content = data.choices?.[0]?.message?.content;
+        requestCount++;
+        return data;  
+      } catch (error) {
+          if (error.status === 429 && requestCount < 2) {
+            const retryAfterMs = ((Number(error.retryAfter) || 5) + 1) * 1000;
+            console.warn(`Rate limit hit; retrying after ${retryAfterMs}ms`);
+            await delay(retryAfterMs);
+            requestCount++;
+            continue;
+          } else {
+            console.error(`Request failed.`);
+            record.ms = Math.round(performance.now() - start);
+            record.error = safeError(error);
+            record.retryAfter = error.retryAfter;
+            throw error;
+          }
+        }
+      }
+    } finally {
+      calls.push(record); 
+    }
+  }
 
 async function evaluate(item) {
   const calls = [], requests = [], toolCalls = [];
