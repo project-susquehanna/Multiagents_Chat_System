@@ -86,3 +86,11 @@ test('invalid C JSON is retried with the C contract', async () => {
     assert.match(requests[3].messages[0].content, /decision, reasonCode, reason, retryHint, and reply/);
     assert.doesNotMatch(requests[3].messages[0].content, /Must contain exactly four fields: skill/);
 });
+test('invalid C output after its retry falls back to a safe final answer', async () => {
+    const invalid = { ...retry, reasonCode: 'insufficient_evidence' };
+    const { body, executed } = await run([action(), draft, invalid, invalid]);
+    assert.equal(body.review.decision, 'final');
+    assert.equal(body.review.reasonCode, 'retry_exhausted');
+    assert.notEqual(body.finalAnswer, draft.reply);
+    assert.deepEqual(executed, ['searchTavily', 'stopOperate']);
+});
