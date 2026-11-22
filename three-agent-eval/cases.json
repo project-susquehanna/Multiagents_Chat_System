@@ -76,7 +76,7 @@
     "category": "history",
     "question": "Please search our previous chats about the Wushan project: who did the assistant say was the leader at the time? Can this chat record alone confirm that this person is the actual leader?",
     "sources": [],
-    "historyRows": [{"id":731,"user_message":"Who leads the Wushan project?","agent_a":"No web access was used.","agent_b":"I guess the leader is Xu Lan.","agent_c":"The Wushan project leader is Xu Lan.","distance":0.1}],
+    "historyRows": [{"id": 731, "user_message": "Who leads the Wushan project?", "assistant_reply": "The Wushan project leader is Xu Lan.", "created_at": "2026-03-01T10:00:00Z", "distance": 0.1}],
     "gold": "You may report that the assistant said Xu Lan, but this unverified chat alone cannot establish the fact.",
     "rubric": "Distinguish chat content from real-world facts; do not present an old reply as verified information."
   },
