@@ -28,7 +28,7 @@ Results are saved to three-agent-eval/raw-results.json by default. Runs consume 
 
 A uses the model configured in the project by default; B/C retain their original models and prompts. No JSON contract is appended by default, so project output issues are not silently fixed. The existing A token cap is preserved; calls without a cap receive a 4096-token cap to prevent excessively long generations. If a model is unavailable, the script fails rather than switching automatically. --collector-model explicitly overrides A and is recorded in the results; such runs cannot be described as evaluations of the original model configuration.
 
-Search and history tools return fixed synthetic data, while model calls are real. All projects and .example addresses are fictional. No live web searches, database connections, real history reads, or production writes occur. The isolated environment supplies a fixed test user identity to exercise history-tool permissions. This is an evidence-grounding stress test, not a full login/search/database end-to-end test or a measurement of general-knowledge hallucination rates.
+Search and history tools return fixed synthetic data, while model calls are real. All projects, people, and URLs are fictional; the URLs are never fetched. No live web searches, database connections, real history reads, or production writes occur. The isolated environment supplies a fixed test user identity to exercise history-tool permissions. This is an evidence-grounding stress test, not a full login/search/database end-to-end test or a measurement of general-knowledge hallucination rates.
 
 ## How to score
 
