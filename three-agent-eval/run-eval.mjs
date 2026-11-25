@@ -104,7 +104,7 @@ const audit = {
   runnerSHA256: crypto.createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex'),
   design: {
     purpose: 'Small controlled evidence-grounding stress test; not a population hallucination rate.',
-    fixtureDisclosure: 'All project names, source pages, and source texts are synthetic. .example URLs are fixtures, not live web pages.',
+    fixtureDisclosure: 'All project names, source pages, and source texts are synthetic. Source URLs are fictional fixtures, not live web pages.',
     currentPipeline: 'Current chat.js with preflight routing validation and one shared feedback retry; tools return fixed fixtures; database writes disabled.',
     comparisons: ['B draft (20B, no reviewer)', 'C final (120B reviewer)', '120B alone using the exact B input and system prompt'],
     collectorOverride: collectorOverride || null,
