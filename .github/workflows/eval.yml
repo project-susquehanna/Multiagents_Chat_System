@@ -31,11 +31,16 @@ jobs:
       - run: node three-agent-eval/run-eval.mjs --project . --limit 12 --interval-ms 60000
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      - run: node three-agent-eval/score.mjs
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: eval-results
-          path: three-agent-eval/raw-results.json
+          path: |
+            three-agent-eval/raw-results.json
+            three-agent-eval/scores.json
         
           
           
