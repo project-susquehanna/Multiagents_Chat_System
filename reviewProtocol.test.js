@@ -58,6 +58,18 @@ test('wrong history tool is blocked before execution and consumes shared retry',
     assert.equal(body.retriesUsed, 1);
     assert.equal(body.attempts[0].stage, 'preflight');
 });
+test('A repeating a rejected tool is re-asked once without spending the retry', async () => {
+    const { body, executed, requests } = await run([action('searchHistory'), action('searchHistory'), action(), draft, final]);
+    assert.deepEqual(executed, ['searchTavily', 'stopOperate']);
+    assert.equal(body.retriesUsed, 1);
+    assert.deepEqual(Array.from(body.attempts, a => a.stage), ['preflight', 'rejected_tool', 'review']);
+    assert.match(requests[2].messages.at(-1).content, /Rejected tools \(must not be selected\): searchHistory/);
+});
+test('a rejected tool is never executed even if A keeps choosing it', async () => {
+    const { body, executed } = await run([action('searchHistory'), action('searchHistory'), action('searchHistory'), draft, final]);
+    assert.deepEqual(executed, ['stopOperate']);
+    assert.equal(body.attempts.at(-1).toolResult.blocked, true);
+});
 test('C feedback reruns A, B and C once and is visible to A', async () => {
     const { body, requests, executed } = await run([action(), draft, retry, action(), draft, final]);
     assert.equal(body.attempts.length, 2);
@@ -71,8 +83,8 @@ test('repeated retry from C is bounded and becomes an explicit final limitation'
     assert.equal(body.stopOperate, true);
 });
 test('preflight and C cannot each obtain a retry', async () => {
-    const { body, executed } = await run([action('searchHistory'), action('searchHistory'), draft, retry]);
-    assert.deepEqual(executed, ['stopOperate']);
+    const { body, executed } = await run([action('searchHistory'), action(), draft, retry]);
+    assert.deepEqual(executed, ['searchTavily', 'stopOperate']);
     assert.equal(body.retriesUsed, 1);
     assert.equal(body.review.reasonCode, 'retry_exhausted');
 });

@@ -139,21 +139,37 @@ router.post("/", async (req, res) => {
         let reviewDecision;
         let retriesUsed = 0;
         let feedback = '';
+        // Tools already rejected for this question (by preflight or by C as wrong_tool). A may not pick them again.
+        const bannedTools = new Set();
+        // If A repeats a rejected tool, ask it once more without spending the shared retry.
+        let correctionUsed = false;
         const attempts = [];
         let tokenCount = 0;
         while (true) {
             dataProvideAgentResult = await startAgent(
                 "qwen/qwen3.8-27b",
-                `${catalogPrompt}\n\nYou are the information collector.\nRules:\n- Review the previous conversation first to understand references and context in the current question.\n- When the user asks to verify external projects, announcements, or facts, use searchTavily to obtain evidence; do not substitute searchHistory for web search. Use searchHistory only when the current question requires retrieving specific content from previous chats.\n- Determine whether the current question requires external information or chat history, and select the appropriate task tool if needed.\n- You cannot use stop-operate.\n- Do not perform destructive operations such as deleting or clearing chat history.\n- Do not present model memory or your own summaries as backend evidence.\n- When calling a tool, reply must only describe the information needed or the search purpose; do not claim that results have already been obtained.\n- When no tool is needed, set both skill and tool to none and briefly describe the background or limitations relevant to the answer.`,
-                `Original user topic: ${originalMessage}\n\nFull previous conversation (for context only, not automatically factual evidence): \n${messageHistory}\n\nBackend routing feedback (not factual evidence): ${feedback || "none"}`,
+                `${catalogPrompt}\n\nYou are the information collector.\nRules:\n- Review the previous conversation first to understand references and context in the current question.\n- When the user asks to verify external projects, announcements, or facts, use searchTavily to obtain evidence; do not substitute searchHistory for web search. Use searchHistory only when the current question requires retrieving specific content from previous chats.\n- Determine whether the current question requires external information or chat history, and select the appropriate task tool if needed.\n- You cannot use stop-operate.\n- Do not perform destructive operations such as deleting or clearing chat history.\n- Do not present model memory or your own summaries as backend evidence.\n- When calling a tool, reply must only describe the information needed or the search purpose; do not claim that results have already been obtained.\n- When no tool is needed, set both skill and tool to none and briefly describe the background or limitations relevant to the answer.\n- If the backend lists rejected tools, never select any of them again; choose a different tool, or none.`,
+                `Original user topic: ${originalMessage}\n\nFull previous conversation (for context only, not automatically factual evidence): \n${messageHistory}\n\nBackend routing feedback (not factual evidence): ${feedback || "none"}\n\nRejected tools (must not be selected): ${[...bannedTools].join(', ') || "none"}`,
                 0.3,
                 1000
             );
 
-            const blockedReason = retriesUsed > 0 && !['searchTavily', 'searchHistory', 'none'].includes(dataProvideAgentResult.tool)
+            // Enforced in code, not only in the prompt: a rejected tool is never executed again.
+            const repeatedTool = bannedTools.has(dataProvideAgentResult.tool);
+            if (repeatedTool && !correctionUsed) {
+                correctionUsed = true;
+                const reason = `${dataProvideAgentResult.tool} was already rejected for this question. Select a different tool.`;
+                attempts.push({ stage: 'rejected_tool', action: dataProvideAgentResult, decision: 'reask', reason });
+                feedback = reason;
+                continue;
+            }
+            const blockedReason = repeatedTool
+                ? `${dataProvideAgentResult.tool} was already rejected for this question, so it was not executed again.`
+                : retriesUsed > 0 && !['searchTavily', 'searchHistory', 'none'].includes(dataProvideAgentResult.tool)
                 ? 'Feedback retries allow read-only retrieval only; task operations such as generating files are not allowed.'
                 : preflightReason(originalMessage, dataProvideAgentResult);
             if (blockedReason && retriesUsed < 1) {
+                bannedTools.add(dataProvideAgentResult.tool);
                 attempts.push({ stage: 'preflight', action: dataProvideAgentResult, decision: 'retry', reason: blockedReason });
                 retriesUsed++;
                 feedback = blockedReason;
@@ -191,6 +207,7 @@ router.post("/", async (req, res) => {
             }
             attempts.push({ stage: 'review', action: dataProvideAgentResult, toolResult: dataProvideToolResult, draft: giveAnswerAgentResult.reply, review: reviewDecision });
             if (reviewDecision.decision === 'retry' && retriesUsed < 1) {
+                if (reviewDecision.reasonCode === 'wrong_tool') bannedTools.add(dataProvideAgentResult.tool);
                 retriesUsed++;
                 feedback = JSON.stringify({ previousAction: dataProvideAgentResult, reason: reviewDecision.reason, retryHint: reviewDecision.retryHint });
                 continue;
