@@ -2,8 +2,17 @@ name: AI eval
 
 on:
   workflow_dispatch:
+    inputs:
+      case:
+        description: 'Case id to run, e.g. 04_supported_inference (leave empty to run all cases)'
+        required: false
+        default: ''
+      repeats:
+        description: 'How many times to run that case'
+        required: false
+        default: '1'
   push:
-    paths: 
+    paths:
       - 'prompts/**'
       - 'skills/**'
       - 'tools/**'
@@ -28,12 +37,27 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
-      - run: node three-agent-eval/run-eval.mjs --project . --limit 1000 --interval-ms 60000
+      - name: Run eval
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      - run: node three-agent-eval/score.mjs
+          CASE: ${{ inputs.case }}
+          REPEATS: ${{ inputs.repeats }}
+        run: |
+          if [ -n "$CASE" ]; then
+            node three-agent-eval/run-eval.mjs --project . --case "$CASE" --repeats "$REPEATS" --interval-ms 60000 --out three-agent-eval/focused.json
+          else
+            node three-agent-eval/run-eval.mjs --project . --limit 1000 --interval-ms 60000
+          fi
+      - name: Score
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CASE: ${{ inputs.case }}
+        run: |
+          if [ -n "$CASE" ]; then
+            node three-agent-eval/score.mjs --results three-agent-eval/focused.json
+          else
+            node three-agent-eval/score.mjs
+          fi
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
@@ -41,7 +65,6 @@ jobs:
           path: |
             three-agent-eval/raw-results.json
             three-agent-eval/scores.json
-        
-          
-          
-           
+            three-agent-eval/focused.json
+            three-agent-eval/focused.scores.json
+          if-no-files-found: ignore
